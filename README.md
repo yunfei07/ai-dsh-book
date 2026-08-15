@@ -4,25 +4,30 @@ English | [中文](README.zh.md)
 
 A bilingual, runnable guide to building plugins for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness). The book starts with a minimal local plugin and progresses through tools, configuration, lifecycle, services, events, capability roles, provider adapters, and Web UI themes.
 
-Chinese is the default website locale. English pages live under `/en/`.
+The site uses the [MkThingsHQ/mkdocs](https://github.com/MkThingsHQ/mkdocs) FumaPress template with Waku, React, Tailwind CSS, static search, light and dark themes, `llms.txt`, and sitemap generation. Chinese is the default locale; English pages live under `/en/`.
 
 ## Local development
 
-Requirements: Node.js `^22.19.0` or `>=24.0.0` and Corepack.
+Requirements: Node.js 24 or later and Corepack.
 
 ```sh
 corepack pnpm@11.21.0 install
-pnpm docs:dev
+pnpm dev
 ```
 
-Build the static site before publishing:
+Validate and build the static site before publishing:
 
 ```sh
-pnpm docs:build
-pnpm docs:preview
+pnpm check
 ```
 
-Set `BOOK_BASE` when the site is hosted below a path, for example `BOOK_BASE=/ai-dsh-book/ pnpm docs:build` for GitHub Pages project hosting.
+Set `PUBLIC_SITE_URL` to the deployed origin when building production metadata:
+
+```sh
+PUBLIC_SITE_URL=https://docs.example.com pnpm build
+```
+
+The included `wrangler.jsonc` deploys static assets to Cloudflare Workers. Authenticate with Wrangler and run `pnpm deploy`; add a custom domain to that file only when the domain is known.
 
 ## Contents
 
@@ -30,8 +35,8 @@ Set `BOOK_BASE` when the site is hosted below a path, for example `BOOK_BASE=/ai
 - Part II: lifecycle, services, and events
 - Part III: capability roles, LLM adapters, and the Song-inspired UI theme
 
-The examples target the current DeepSeek Harness source tree. Links that leave this book point to their owning repository so the book can be built and read independently.
+The examples target the current DeepSeek Harness source tree. Links that leave this book point to their owning repository so the book can be built and read independently. Chinese chapters are unsuffixed files under `content/`; matching English files use the `.en.mdx` suffix.
 
 ## License
 
-[MIT](LICENSE). This book is derived from the DeepSeek Harness documentation and retains its copyright notice.
+[MIT](LICENSE). The book content is derived from the DeepSeek Harness documentation, and the site runtime is adapted from MkThingsHQ/mkdocs. Both upstream copyright notices are retained.

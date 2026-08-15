@@ -1,0 +1,10 @@
+{
+  "title": "第一部分：让插件跑起来",
+  "icon": "Rocket",
+  "pages": [
+    "index",
+    "tool",
+    "config",
+    "publish"
+  ]
+}

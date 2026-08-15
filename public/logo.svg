@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="dsh 插件开发实战">
+  <rect x="2" y="2" width="60" height="60" rx="13" fill="#263b35"/>
+  <path d="M14 17c7-2 13 0 18 4v29c-5-4-11-6-18-4V17Z" fill="#f2eadc"/>
+  <path d="M50 17c-7-2-13 0-18 4v29c5-4 11-6 18-4V17Z" fill="#e4d9c8"/>
+  <path d="M32 21v29" stroke="#91aa9d" stroke-width="2"/>
+  <circle cx="49" cy="15" r="5" fill="#b64b3a"/>
+</svg>

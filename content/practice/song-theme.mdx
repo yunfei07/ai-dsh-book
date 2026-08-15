@@ -1,0 +1,127 @@
+---
+title: "开发宋式 UI 主题"
+description: "以可撤销的 token 覆盖层开发宋式 Web UI 主题。"
+---
+本教程为 dsh Web UI 添加视觉风格，同时不改变已持久化的外观偏好。完成后会得到一个客户端插件：它能覆盖两套内置色板，卸载时自动清理，也能由后续 profile patch 移除或替换。
+
+## 准备工作
+
+请先完成[第一个插件](/basic/)和[服务与依赖](/framework/service)，再阅读 [Web UI 样式参考](https://github.com/deepseek-ai/DeepSeek-Harness/blob/master/docs/web-styling.md)。仓库检出需要已经安装依赖。
+
+## 选择扩展点
+
+`@deepseek-ai/dsh-client-ui-theme` 负责 `light`、`dark` 和 `system` 偏好。它提供 `ThemeRuntime.overrideTokens(source, tokens)`，可以在当前色板上添加具名覆盖层。每个条目都要提供浅色和深色值；方法返回的 disposer 只移除本次添加的层。
+
+视觉风格适合放在这层覆盖中。若增加第四种持久化偏好，品牌组合会和用户的明暗配色选择混在一起；若直接修改基础样式表，之后很难撤销整套风格。宋式主题因此保持为独立客户端插件，不改变偏好 schema。
+
+## 创建包
+
+可运行实现位于独立仓库 [`yunfei07/ui-song-theme`](https://github.com/yunfei07/ui-song-theme)。它包含一个空的 node 入口，让 Loader 能载入该包；浏览器入口通过 `./client` 导出；仓库同时提交构建产物，以支持 dsh 直接从 GitHub 安装。`package.json` 通过包名声明浏览器依赖：
+
+```json
+{
+  "dsh": {
+    "client": {
+      "inject": ["@deepseek-ai/dsh-client-ui-theme"],
+      "platform": "web"
+    }
+  }
+}
+```
+
+该包将 `@deepseek-ai/dsh-client-ui-theme` 声明为 peer dependency。主题服务已经负责呈现状态，因此这个包不需要 React 组件。
+
+## 定义成对的语义 token
+
+静态颜色选择留在主题插件里，通过现有语义名称公开。可运行包使用绢纸色表面、暖墨色正文、青瓷色交互和朱砂色错误提示；深色值改用夜墨色表面和更明亮的青瓷色强调。
+
+```ts ignore-check
+import type { ThemeTokenOverrides } from '@deepseek-ai/dsh-client-ui-theme/client'
+
+const tokens = {
+  '--dsw-alias-bg-base': {
+    light: 'oklch(0.97 0.012 82)',
+    dark: 'oklch(0.18 0.012 75)',
+  },
+  '--dsw-alias-label-primary': {
+    light: 'oklch(0.25 0.018 70)',
+    dark: 'oklch(0.9 0.012 82)',
+  },
+  '--dsw-alias-brand-primary': {
+    light: 'oklch(0.43 0.065 174)',
+    dark: 'oklch(0.76 0.07 174)',
+  },
+} satisfies ThemeTokenOverrides
+```
+
+应使用语义名称，不要新增组件专用颜色。同一个青瓷色可以通过不同别名服务于品牌、主按钮、活跃导航和焦点角色，组件无需了解具体色板。
+
+## 挂载并释放覆盖层
+
+浏览器入口声明服务注入，并把 disposer 交给 Cordis：
+
+```ts ignore-check
+import type { Context } from '@deepseek-ai/cordis'
+import type { ThemeTokenOverrides } from '@deepseek-ai/dsh-client-ui-theme/client'
+
+const tokens = {
+  '--dsw-alias-bg-base': {
+    light: 'oklch(0.97 0.012 82)',
+    dark: 'oklch(0.18 0.012 75)',
+  },
+} satisfies ThemeTokenOverrides
+
+export const inject = ['theme']
+
+export function apply(ctx: Context): void {
+  ctx.effect(
+    () => ctx.theme.overrideTokens('my-song-theme', tokens),
+    'my-song-theme: paired token override',
+  )
+}
+```
+
+theme 的纯类型导入会启用 Cordis 声明合并，不增加浏览器值依赖。`inject` 会等待 ThemeRuntime 就绪后再执行 `apply`。插件卸载时，effect disposer 会移除具名覆盖层，ThemeRuntime 随即重新发布下方色板。
+
+## 添加共享几何与排版角色
+
+只改颜色会保留原有视觉语言。共享主题所有方定义了 `--dsw-font-family-display`、语义圆角变量和 `--dsw-press-scale`。共享基础组件读取这些变量，功能标题按需使用展示字体。正文继续使用 `--dsw-font-family`，代码继续使用 `--ds-font-family-code`。
+
+宋式组合使用克制的层级：展示文字使用系统已安装的宋体或 CJK 衬线字体；正文沿用无衬线字体栈；卡片依靠小圆角和边线划分层级，减少悬浮胶囊；主交互使用青瓷色；错误角色使用朱砂色。该包不下载字体，也不添加装饰纹理，加载和文字渲染更可预测。
+
+## 安装并组合插件
+
+将 GitHub 仓库作为 bundle 安装到 Web profile：
+
+```sh
+dsh plugin --profile web add github:yunfei07/ui-song-theme
+dsh --profile web
+```
+
+需要可复现安装时，在仓库名后追加 commit SHA。bundle patch 会把外部主题放在基础主题之后；删除插件即可恢复内置主题：
+
+```sh
+dsh plugin --profile web add github:yunfei07/ui-song-theme#<commit-sha>
+dsh plugin --profile web remove ui-song-theme
+```
+
+## 验证行为
+
+聚焦测试会挂载真实的 `ThemeRuntime`，加载客户端插件，并检查两种配色下的解析结果。测试随后卸载插件，确认覆盖层已经消失。另一条断言遍历 token 字典，检查每项都有两种模式。
+
+```sh
+git clone https://github.com/yunfei07/ui-song-theme.git
+cd ui-song-theme
+corepack pnpm@11.21.0 install
+pnpm check
+pnpm build
+pnpm pack:check
+```
+
+视觉检查需要覆盖层级、对比度、焦点可见性、窄窗口表现和两种配色。单元测试可以证明组合与清理行为，但无法判断展示字体是否易读，也无法判断两层暖色表面是否容易区分。
+
+## 安全扩展主题
+
+多个组件需要同一视觉角色时，增加语义 token；只有一个组件使用的值应留在组件内部。后续主题插件可以覆盖同名 token，ThemeRuntime 会按注册顺序应用各层，并在顶层移除时恢复前一层取值。
+
+视觉风格需要用户选择不同变体时，可以为本插件增加配置字段，并在加载时校验。`light`、`dark` 和 `system` 继续由基础主题服务负责，让操作系统偏好在每套视觉风格中都能正常工作。

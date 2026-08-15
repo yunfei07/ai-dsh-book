@@ -1,0 +1,9 @@
+{
+  "title": "Part III: Build Product Capabilities",
+  "icon": "Blocks",
+  "pages": [
+    "index",
+    "llm-adapter",
+    "song-theme"
+  ]
+}

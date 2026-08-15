@@ -1,0 +1,9 @@
+{
+  "title": "Part II: Use the Framework",
+  "icon": "Network",
+  "pages": [
+    "index",
+    "service",
+    "events"
+  ]
+}

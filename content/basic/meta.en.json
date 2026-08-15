@@ -1,0 +1,10 @@
+{
+  "title": "Part I: Make a Plugin Work",
+  "icon": "Rocket",
+  "pages": [
+    "index",
+    "tool",
+    "config",
+    "publish"
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "title": "第三部分：开发产品能力",
+  "icon": "Blocks",
+  "pages": [
+    "index",
+    "llm-adapter",
+    "song-theme"
+  ]
+}
