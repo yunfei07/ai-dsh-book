@@ -1,0 +1,21 @@
+{
+  "name": "ai-dsh-book",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A bilingual practical guide to developing DeepSeek Harness plugins",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.3",
+    "vitepress": "^1.6.4"
+  },
+  "engines": {
+    "node": "^22.19.0 || >=24.0.0"
+  },
+  "packageManager": "pnpm@11.21.0"
+}

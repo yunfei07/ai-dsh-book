@@ -1,0 +1,41 @@
+# dsh 插件开发实战
+
+[English](/en/) | 中文
+
+这本书给出一条可运行的 DeepSeek Harness 插件开发路径。内容从一个本地小模块开始，逐步加入生命周期、服务、事件、配置、工具、能力角色、提供方适配器和浏览器组合。每章都会链接可运行源码，或者让你在仓库检出中创建一个能运行的示例。
+
+读者需要了解 TypeScript，并能从源码运行仓库，不需要预先接触 Cordis。第一次学习时可以按顺序完成各章；交付过一个插件后，可将各页面作为单独参考。
+
+## 第一部分：让一个插件跑起来
+
+1. [第一个 Harness 插件](./basic/index.md)创建本地模块，通过 patch 插入组合，并用 `ctx.effect()` 管理资源。
+2. [开发一个 Tool](./basic/tool.md)把代码变成模型可调用的能力，并明确输入和输出呈现。
+3. [插件配置](./basic/config.md)在加载时校验部署选项。
+4. [打包与安装插件](./basic/publish.md)为插件补齐 package manifest 和可分发入口。
+
+## 第二部分：有意识地使用框架
+
+1. [插件生命周期](./framework/index.md)介绍 apply、资源释放、作用域与重新加载行为。
+2. [服务与依赖](./framework/service.md)介绍声明合并、服务提供方和 `inject` 顺序。
+3. [事件系统](./framework/events.md)介绍 emit、bail、serial 和 waterfall 模式，以及如何通过 `next()` 继续委托。
+4. [从零理解 Cordis](https://github.com/deepseek-ai/DeepSeek-Harness/blob/master/docs/cordis-tutorial/index.md)在临时目录中重新构建同一组概念，不需要 API 密钥。
+
+## 第三部分：开发产品能力
+
+1. [能力的三种角色设计](./practice/index.md)在角色需要独立演进时，将 Service Definition、Service Provider 和 Consumer 分开。
+2. [LLM 适配器](./practice/llm-adapter.md)把提供方无关的模型请求转换成具体 API 调用，再把流式响应转换回 Harness 事件。
+3. [开发宋式 UI 主题](./practice/song-theme.md)将浏览器视觉风格实现为可撤销的组合层。
+
+## DeepSeek 实现要点
+
+DeepSeek 工具调用会经过无类型的模型输入边界。官方[工具调用指南](https://api-docs.deepseek.com/guides/tool_calls)说明了函数 schema 和 strict mode，官方[对话补全接口参考](https://api-docs.deepseek.com/api/create-chat-completion)也提醒开发者，在非 strict mode 下，生成的参数仍可能无效。dsh 的 Tool Consumer 应只声明一份 schema，在工具入口校验模型生成的参数；能力需要可替换提供方时，再把执行逻辑放到服务后面。
+
+官方[思考模式指南](https://api-docs.deepseek.com/guides/thinking_mode)规定，思考模式发生工具调用后，适配器需要在后续请求中回传此前的 `reasoning_content`。这条协议应留在 LLM 适配器中；功能插件使用稳定的 `llm` 服务，无需复制提供方传输逻辑。
+
+官方[上下文缓存指南](https://api-docs.deepseek.com/guides/kv_cache)说明，DeepSeek 按重复的请求前缀命中缓存，并在 usage 中报告命中与未命中的 token 数。dsh 要求所有模型可见输入都能从 session log 重建，同时将稳定提示词分区放在随轮次变化的内容之前。插件新增模型可见输入时应添加 session event，也不要在每轮请求中改写稳定提示词前缀。
+
+## 可以带到大型插件里的习惯
+
+通过 `ctx.effect()`、`ctx.on()` 或返回 disposer 的注册方法贡献功能。用 `inject` 声明必需服务；能在加载时判断的错误配置应立即报错；部署可调项放入经过校验的配置；每个模型可见输入都应有持久 session event。只有能力角色可以独立替换或发布时才拆包。浏览器功能通过 slot 或共享客户端服务贡献，React 组件本身不感知 Cordis。
+
+验证命令应对应被改动的行为。包测试证明局部逻辑；无密钥 snapshot 证明组装后的模型或用户输出；`pnpm run test:gui` 覆盖浏览器单元测试；回放模式的 `pnpm run test:web` 覆盖真实 Web 组合；`pnpm run doc-sync` 检查书稿和参考文档的双语配对。

@@ -1,0 +1,41 @@
+# dsh Plugin Development in Practice
+
+English | [中文](/)
+
+This book is the working path for building plugins in DeepSeek Harness. It starts with a small local module, then adds lifecycle ownership, services, events, configuration, tools, capability roles, provider adapters, and browser composition. Each chapter points to runnable source or asks you to create a runnable example from a repository checkout.
+
+The intended reader knows TypeScript and can run the repository from source. No Cordis experience is required. Complete the chapters in order when learning the system; use the individual pages as references after you have shipped a plugin.
+
+## Part I: make one plugin work
+
+1. [Your first Harness plugin](./basic/index.md) creates a local module, inserts it through a patch, and gives owned resources to `ctx.effect()`.
+2. [Build a tool](./basic/tool.md) turns code into a model-callable capability with explicit input and output presentation.
+3. [Plugin configuration](./basic/config.md) validates deployment choices at load time.
+4. [Package and install](./basic/publish.md) gives the plugin a package manifest and a distributable entry.
+
+## Part II: use the framework deliberately
+
+1. [Plugin lifecycle](./framework/index.md) covers apply, disposal, scopes, and reload behavior.
+2. [Services and dependencies](./framework/service.md) explains declaration merging, providers, and `inject` ordering.
+3. [Events](./framework/events.md) covers emit, bail, serial, and waterfall modes, including delegation with `next()`.
+4. [Cordis from first principles](https://github.com/deepseek-ai/DeepSeek-Harness/blob/master/docs/cordis-tutorial/index.md) rebuilds the same concepts in a scratch directory without an API key.
+
+## Part III: build product capabilities
+
+1. [Three-role capability design](./practice/index.md) separates a Service Definition, Service Provider, and Consumer when those roles need independent evolution.
+2. [LLM adapter](./practice/llm-adapter.md) translates provider-neutral model requests into a provider API and translates streaming responses back into Harness events.
+3. [Build the Song-inspired UI theme](./practice/song-theme.md) adds a browser-only visual identity as a reversible composition layer.
+
+## DeepSeek-specific implementation notes
+
+DeepSeek tool calls cross an untyped model boundary. The official [Tool Calls guide](https://api-docs.deepseek.com/guides/tool_calls) documents function schemas and strict mode, while the [Chat Completion reference](https://api-docs.deepseek.com/api/create-chat-completion) warns that generated arguments can still be invalid outside strict mode. A dsh Tool Consumer therefore declares one schema, validates model-produced arguments at the tool boundary, and keeps execution behind a service when the capability needs replaceable providers.
+
+Thinking-mode tool calls require the adapter to return prior `reasoning_content` on subsequent requests, as specified by the official [Thinking Mode guide](https://api-docs.deepseek.com/guides/thinking_mode). Keep this protocol rule in the LLM adapter. A feature plugin should consume the stable `llm` service instead of reproducing provider wire behavior.
+
+DeepSeek context caching matches repeated request prefixes and reports hit and miss tokens in usage, according to the official [Context Caching guide](https://api-docs.deepseek.com/guides/kv_cache). dsh keeps model-visible inputs reconstructable from the session log and keeps stable prompt sections ahead of turn-specific content. Plugin authors should add a session event for every new model-visible input and avoid rewriting stable prompt prefixes on each turn.
+
+## Habits that survive larger plugins
+
+Register contributions through `ctx.effect()`, `ctx.on()`, or a registry method that returns a disposer. Declare required services in `inject`; fail when self-contained configuration is invalid; keep tunable deployment choices in validated config; and give every model-visible input a durable session event. Split capability roles only when they can be replaced or released independently. For browser work, contribute through slots or shared client services and keep the React component unaware of Cordis.
+
+Run checks that match the changed behavior. A package test proves local logic, a keyless snapshot proves assembled model or user output, `pnpm run test:gui` covers browser units, replayed `pnpm run test:web` covers a real Web composition, and `pnpm run doc-sync` checks the book and reference pairs.
